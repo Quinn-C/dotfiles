@@ -182,9 +182,12 @@ if [ -x /usr/bin/dircolors ]; then
   alias egrep='egrep --color=auto'
 fi
 
+# Neovim
 # Make "vim" direct to nvim
 alias vim=nvim
-
+alias f='nvim'
+alias ovc='nvim ~/.dotfiles/dotfiles/.config/nvim/init.vim'
+alias obc='nvim ~/.dotfiles/dotfiles/.bashrc'
 # ls aliases
 alias ll='ls -alF'
 alias l='ls -CF'
@@ -193,6 +196,14 @@ alias l='ls -CF'
 # the perl step removes the final newline from the output
 alias pbcopy="perl -pe 'chomp if eof' | xsel --clipboard --input"
 alias pbpaste="xsel --clipboard --output"
+
+# Git
+alias g="git status"
+alias ga="git add ."
+alias gm="git commit"
+
+# reload bashrc
+alias rbc="source ~/.bashrc; echo 'Reloaded ~/.bashrc'"
 
 # }}}
 # Functions --- {{{
