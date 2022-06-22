@@ -1,0 +1,28 @@
+[core]
+        repositoryformatversion = 0
+        filemode = true
+        bare = false
+        logallrefupdates = true
+        editor=nvim
+[user]
+        email = joanchenuk@gmail.com
+        name = Joan Chen
+
+[init]
+        defaultBranch = main
+
+[fetch]
+        prune = true
+
+[status]
+        short = true
+[branch "main"]
+        remote = origin
+        merge = refs/heads/main
+
+[credential "https://github.com"]
+	helper = 
+	helper = !/home/joanchen/.asdf/installs/github-cli/2.11.3/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/home/joanchen/.asdf/installs/github-cli/2.11.3/bin/gh auth git-credential
