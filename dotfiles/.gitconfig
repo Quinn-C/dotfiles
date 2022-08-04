@@ -21,8 +21,12 @@
         merge = refs/heads/main
 
 [credential "https://github.com"]
-	helper = 
+	helper =
 	helper = !/home/joanchen/.asdf/installs/github-cli/2.11.3/bin/gh auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
+	helper =
 	helper = !/home/joanchen/.asdf/installs/github-cli/2.11.3/bin/gh auth git-credential
+[alias]
+        hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
+        type = cat-file -t
+        dump = cat-file -p

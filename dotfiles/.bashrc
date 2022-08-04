@@ -201,9 +201,19 @@ alias pbpaste="xsel --clipboard --output"
 alias g="git status"
 alias ga="git add ."
 alias gm="git commit"
+alias gp="git push origin main"
+
 
 # reload bashrc
 alias rbc="source ~/.bashrc; echo 'Reloaded ~/.bashrc'"
+
+# cd to the folders above
+# alias .='cd ..'
+# alias ..='cd ../..'
+# alias ...='cd ../../..'
+# alias ....='cd ../../../..'
+# alias .....='cd ../../../../..'
+
 
 # }}}
 # Functions --- {{{
@@ -253,3 +263,5 @@ source $HOME/.asdf/asdf.sh
 source $HOME/.asdf/completions/asdf.bash
 
 # }}}
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
