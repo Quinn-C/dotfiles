@@ -22,6 +22,12 @@ today(){
   echo This is a `date +"%A %d in %B of %Y (%r)"` return
 }
 
+export R_EXTRA_CONFIGURE_OPTIONS='--enable-R-shlib --with-cairo'
+
+export PYTHON_CONFIGURE_OPTS='--enable-shared'
+
+export PYSPARK_DRIVER_PYTHON=jupyter
+export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
 
 path_ladd() {
   # Takes 1 argument and adds it to the beginning of the PATH
@@ -37,6 +43,80 @@ path_radd() {
   fi
 }
 
+# Log into Redshift integration general by vault cli
+kipint_amer() {
+  vauth
+  echo '---'
+  local host="rs-analytics-integration.keplergrp.com"
+  local kipint_pw=$(vault read -field=redshift_creds -format=json secret/integration/kip-s3-to-redshift-ingestion/amer/secure | jq '.general["password"]')
+  local ipaddr=$(dns_lookup $host)
+  PGPASSWORD=$kipint_pw FRIENDLY_HOSTNAME="integration-amer" psql -h $host -U kepleradmin -p 5439 -d general
+}
+
+# Get the nth row from a given file on s3
+nth_row() {
+  # 1st arg: s3 path
+  # 2nd arg: row # that triggered the stl load error
+  # example: nth_row s3://testingcopy/zliu/test.csv 32
+  # to extract and display the 32nd row of this file
+  local filename=$(basename -- "$1")
+  local extension="${filename##*.}"
+  # fiq: file in question
+  local local_filename="fiq.${filename}"
+
+  # copy the s3 file to local box
+  aws s3 cp $1 $local_filename
+
+  # deal with compressed file
+  local proceed=true
+  local comp_type=$(file $local_filename)
+  if [[ "$comp_type" == *"bzip2"* ]]; then
+    bzip2 -d $local_filename
+    # trim the extension because it's decompressed
+    local local_filename=${local_filename%.*}
+  elif [[ "$comp_type" == *"bz2"* ]]; then
+    bzip2 -d $local_filename
+    # trim the extension because it's decompressed
+    local local_filename=${local_filename%.*}
+  elif [[ "$comp_type" == *"gzip"* ]]; then
+    gunzip $local_filename
+    # trim the extension because it's decompressed
+    local local_filename=${local_filename%.*}
+  else
+    if [[ $extension != "csv" && $extension != "tsv" && $extension != "json" ]]; then
+      tput setaf 1;
+      echo -e "Attention: this file is of $extension extension!"
+      echo -e "Can't deal with '$comp_type' this type of file yet!"
+      proceed=false
+    fi
+  fi
+
+  if [[ $proceed = "true" ]]; then
+    # extract the row that caused the issue
+    local txt_type=$(file $local_filename)
+    local total_lines=$(wc -l < $local_filename)
+    if (( $2 > $total_lines )); then
+      tput setaf 1;
+      echo -e "The line you want to see exceed total lines $total_lines"
+      proceed=false
+    else
+      echo "========== See data below =========="
+      if [[ "$txt_type" == *"JSON"* ]]; then
+        sed "${2}q;d" $local_filename | jq
+      else
+        sed "${2}q;d" $local_filename
+      fi
+    fi
+  fi
+
+  # clean-up: remove the downloaded files immediately in case it has PII info
+  if [ -f $local_filename ]; then
+    rm $local_filename
+  fi
+  if [[ $proceed = "false" ]]; then
+    false
+  fi
+}
 # }}}
 # Exported variable: LS_COLORS --- {{{
 # Colors when using the LS command
@@ -188,6 +268,10 @@ alias vim=nvim
 alias f='nvim'
 alias ovc='nvim ~/.dotfiles/dotfiles/.config/nvim/init.vim'
 alias obc='nvim ~/.dotfiles/dotfiles/.bashrc'
+
+# Log in AWS console with specified aws region (add emea or amer after aws-console)
+alias aws-console='bash ~/src/joan/shell_scripts/login_aws_profiles.sh'
+
 # ls aliases
 alias ll='ls -alF'
 alias l='ls -CF'
@@ -201,19 +285,44 @@ alias pbpaste="xsel --clipboard --output"
 alias g="git status"
 alias ga="git add ."
 alias gm="git commit"
-alias gp="git push origin main"
+alias gb="git branch"
+alias gcm="git checkout master"
+alias gp="git pull"
+alias staging="gh pr comment -b staging"
 
+# Frequent repos, cd the repo and activate the Python virtual environment
+alias cd-airflow="cd KIP-Airflow-DAGs; source venv/bin/activate"
+alias cd-athena="cd KIP-Athena-Ingestion; source venv/bin/activate"
+alias cd-s3="cd KIP-S3-To-S3-Transfer; source venv/bin/activate"
+alias cd-spark="cd KIP-Spark-Transformation; source venv/bin/activate"
+alias cd-sftp="cd KIP-SFTP-To-S3-Transfer; source venv/bin/activate"
+alias cd-gsheet="cd KIP-Googlesheet-Ingestion; source venv/bin/activate"
+alias cd-redash="cd KIP-Redash-To-Platform-Transfer; source venv/bin/activate"
+alias cd-datorama="cd KIP-S3-To-Datorama-Transfer; source venv/bin/activate"
+alias cd-create="cd KIP-Create-To-S3-Transfer; source venv/bin/activate"
+
+# Make build and tests
+alias mbt="make build-test"
+alias run-gha="ENV=integration make run-gha-test"
 
 # reload bashrc
 alias rbc="source ~/.bashrc; echo 'Reloaded ~/.bashrc'"
 
+# activate/deactivate python virtual environment
+alias apv="source venv/bin/activate"
+alias de="deactivate"
+
+# tmux
+alias tkw="tmux kill-window"
+
+# turn on wifi
+alias wifi-on="nmcli radio wifi on"
 # cd to the folders above
 # alias .='cd ..'
 # alias ..='cd ../..'
 # alias ...='cd ../../..'
 # alias ....='cd ../../../..'
 # alias .....='cd ../../../../..'
-
 
 # }}}
 # Functions --- {{{
@@ -244,16 +353,16 @@ COLOR_BLUE="\033[34;5;115m"
 COLOR_WHITE="\033[0;37m"
 COLOR_GOLD="\033[38;5;142m"
 COLOR_SILVER="\033[38;5;248m"
+COLOR_LIGHT_RED="\033[1;31m"
 COLOR_RESET="\033[0m"
 BOLD="$(tput bold)"
 
 # Set Bash PS1
-PS1_DIR="\[$BOLD\]\[$COLOR_BRIGHT_BLUE\]\w"
+PS1_DIR="\[$BOLD\]\[$COLOR_LIGHT_RED\]\w"
 PS1_USR="\[$BOLD\]\[$COLOR_GOLD\]\u@\h"
 PS1_END="\[$BOLD\]\[$COLOR_SILVER\]$ \[$COLOR_RESET\]"
 
 PS1="${PS1_DIR}\
-
 ${PS1_USR} ${PS1_END}"
 
 # }}}
@@ -265,3 +374,43 @@ source $HOME/.asdf/completions/asdf.bash
 # }}}
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+
+# Determine active Python virtualenv details.
+function set_virtualenv () {
+  if test -z "$VIRTUAL_ENV" ; then
+      PYTHON_VIRTUALENV=""
+  else
+      PYTHON_VIRTUALENV="${COLOR_GOLD}[`basename \"$VIRTUAL_ENV\"`]${COLOR_NONE} "
+  fi
+}
+
+export PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\] $ "
+
+# Colors definition
+BLUE='\e[1;94m'
+L_BLUE='\e[96m'
+YELLOW='\e[93m'
+DARK_BLUE='\e[34m'
+L_GREEN='\e[92m'
+RED='\e[31m'
+L_RED='\e[91m'
+NC='\e[0m'
+
+export GIT_PS1_SHOWDIRTYSTATE=true        # show * for changes
+export GIT_PS1_SHOWUNTRACKEDFILES=true    # show % for new files
+export PS1="$DARK_BLUE\u$YELLOW@$L_GREEN\h$YELLOW: $BLUE\W $L_RED\ $ "
+export PS1="\$(set_virtualenv) \[\e[0;34m\]\h\[\e[0;32m\]@$BLUE\W \[\e[0;37m\]\@ $L_RED\$(__git_ps1)$NC \[\e[0;35m\]$\[\e[0m\] "
+# Set the full bash prompt.
+function set_bash_prompt () {
+
+  # Set the PYTHON_VIRTUALENV variable.
+  set_virtualenv
+
+  # Set the bash prompt variable.
+  PS1="
+${PYTHON_VIRTUALENV}\[\e[0;34m\]\h\[\e[0;32m\]@$BLUE\W \[\e[0;37m\]\@ $L_RED \[\e[0;35m\]$\[\e[0m\] "
+}
+
+# Tell bash to execute this function just before displaying its prompt.
+PROMPT_COMMAND=set_bash_prompt
