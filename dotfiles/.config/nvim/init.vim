@@ -194,7 +194,9 @@ call plug#begin('~/.vim/plugged')
 Plug 'scrooloose/nerdtree'
 
 " File finder
-Plug 'ctrlpvim/ctrlp.vim'
+Plug 'kien/ctrlp.vim'
+
+Plug 'fannheyward/coc-pyright'
 
 call plug#end()
 " }}}
@@ -319,6 +321,14 @@ augroup custom_remap_nvim_tree_lua
   autocmd FileType NvimTree nnoremap <buffer> <silent> <C-l> <Cmd>NvimTreeResize +2<CR>
   autocmd FileType NvimTree nnoremap <buffer> <silent> <C-h> <Cmd>NvimTreeResize -2<CR>
 augroup end
+
+
+let g:ctrlp_map = '<c-p>'
+let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
+let g:ctrlp_match_func = {'match': 'matcher#python', 'match_args': ['line','fname','source']}
+
+nnoremap <leader>f :CtrlP<CR>
 
 " }}}
 " Package: language server protocol (LSP) with coc.nvim {{{
