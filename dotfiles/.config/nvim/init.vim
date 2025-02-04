@@ -1,11 +1,14 @@
-" Usage: toggle fold in Vim with 'za'. 'zR' to open all folds, 'zM' to close
+":Telescope find_files Usage: toggle fold in Vim with 'za'. 'zR' to open all folds, 'zM' to close
 " General: options {{{
 
 " Enable filetype detection, plugin loading, and indentation loading
 filetype plugin indent on
-
+set nocompatible
 " Code Completion:
 set completeopt=menuone,longest wildmode=longest:full wildmenu
+
+" for showing file icons in Nerdtree
+set encoding=utf8
 
 " Messages:
 " c = don't give |ins-completion-menu| messages; they're noisy
@@ -75,6 +78,7 @@ set background=dark
 
 " Colorcolumn:
 set colorcolumn=80
+highlight ColorColumn ctermbg=lightcyan guibg=blue
 
 " Status Line: specifics for custom status line
 set laststatus=2 ttimeoutlen=50 noshowmode
@@ -97,6 +101,8 @@ set diffopt+=internal,algorithm:patience
 " Folding
 set foldenable foldmethod=marker foldnestmax=1
 
+"Automatically use the system clipboard for copy and paste
+set clipboard=unnamedplus
 " Redraw Window: whenever a window regains focus
 augroup custom_redraw_on_refocus
   autocmd!
@@ -114,123 +120,76 @@ augroup custom_iskeyword_overrides
   autocmd FileType nginx set iskeyword+=$
   autocmd FileType zsh,sh set iskeyword+=-
 augroup end
-
-" }}}
-" General: package management {{{
-
-" Available Commands:
-"   PackagerStatus, PackagerInstall, PackagerUpdate, PackagerClean
-
-function! s:packager_init(packager) abort
-  call a:packager.add('https://github.com/kristijanhusak/vim-packager', {'type': 'opt'})
-
-  " Autocompletion And IDE Features:
-  call a:packager.add('https://github.com/neoclide/coc.nvim.git', {'do': 'yarn install --frozen-lockfile'})
-
-  " TreeSitter:
-  call a:packager.add('https://github.com/nvim-treesitter/nvim-treesitter.git', {'do': ':TSUpdate'})
-  call a:packager.add('https://github.com/lewis6991/spellsitter.nvim.git')
-  call a:packager.add('https://github.com/nvim-treesitter/playground.git')
-  call a:packager.add('https://github.com/windwp/nvim-ts-autotag.git')
-  call a:packager.add('https://github.com/JoosepAlviste/nvim-ts-context-commentstring.git', {'requires': [
-      \ 'https://github.com/tpope/vim-commentary',
-      \ ]})
-
-  " Tree:
-  call a:packager.add('https://github.com/kyazdani42/nvim-tree.lua.git', {'requires': [
-      \ 'https://github.com/kyazdani42/nvim-web-devicons.git',
-      \ ]})
-
-  " General:
-  call a:packager.add('https://github.com/unblevable/quick-scope')
-  call a:packager.add('https://github.com/windwp/nvim-autopairs.git')
-  call a:packager.add('https://github.com/NvChad/nvim-colorizer.lua')
-
-  " Fuzzy Finder:
-  call a:packager.add('https://github.com/nvim-telescope/telescope.nvim.git', {'requires': [
-      \ 'https://github.com/nvim-lua/plenary.nvim.git',
-      \ ]})
-
-  " Git:
-  call a:packager.add('https://github.com/tpope/vim-fugitive')
-  call a:packager.add('https://github.com/lewis6991/gitsigns.nvim.git')
-
-  " Previewers:
-  call a:packager.add('https://github.com/iamcco/markdown-preview.nvim', {'do': 'cd app & yarn install'})
-  call a:packager.add('https://github.com/weirongxu/plantuml-previewer.vim', {'requires': [
-      \ 'https://github.com/tyru/open-browser.vim',
-      \ ]})
-
-  " Code Formatters:
-  call a:packager.add('https://github.com/pappasam/vim-filetype-formatter')
-
-  " Syntax Theme:
-  call a:packager.add('https://github.com/pappasam/papercolor-theme-slim.git')
-
-  " Syntax Highlighting & Indentation:
-  call a:packager.add('https://github.com/evanleck/vim-svelte.git', {'requires': [
-      \ 'https://github.com/cakebaker/scss-syntax.vim.git',
-      \ 'https://github.com/groenewege/vim-less.git',
-      \ 'https://github.com/leafgarland/typescript-vim.git',
-      \ 'https://github.com/othree/html5.vim.git',
-      \ 'https://github.com/pangloss/vim-javascript.git',
-      \ ]})
-  call a:packager.add('https://github.com/Vimjas/vim-python-pep8-indent')
-  call a:packager.add('https://github.com/Yggdroot/indentLine')
-  call a:packager.add('https://github.com/chr4/nginx.vim.git')
-endfunction
-
-packadd vim-packager
-call packager#setup(function('s:packager_init'), {
-      \ 'window_cmd': 'edit',
-      \ })
-
-" }}}
+let mapleader = ","
 " General: Plugin Install {{{
 
 call plug#begin('~/.vim/plugged')
 
-" Nerd tree
-Plug 'scrooloose/nerdtree'
+" TreeSitter
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
 " File finder
 Plug 'kien/ctrlp.vim'
 
-Plug 'fannheyward/coc-pyright'
+" vim color schema
+Plug 'bkad/vim-terraform'
+Plug 'hashivim/vim-hashicorp-tools'
+" Vim color scheme
+Plug 'EdenEast/nightfox.nvim'
+Plug 'folke/tokyonight.nvim'
+" markdown preview cmd, :MarkdownPreview :MarkdownPreviewStop
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
+
+" telescope and its dependencies
+Plug 'nvim-lua/plenary.nvim'
+Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.8' }
+
+" Nvim tree
+Plug 'nvim-tree/nvim-web-devicons' " optional
+Plug 'nvim-tree/nvim-tree.lua'
+
+" NerdTree colorscheme
+" add filetype icon
+Plug 'preservim/nerdtree'
+Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
+Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'ryanoasis/vim-devicons'
+" Python LSP
+"
+" CoC
+Plug 'neoclide/coc.nvim'
+
+" Python syntax highlighting
+"Plug 'NLKNguyen/papercolor-theme'
+Plug 'junegunn/seoul256.vim'
+
+" Delete surrounding ds"
+Plug 'tpope/vim-surround'
+
+Plug 'windwp/nvim-autopairs'
 
 call plug#end()
 " }}}
+
+"colorscheme PaperColor
+" Markdown preview
+function OpenMarkdownPreview (url)
+let g:mkdp_browserfunc = 'OpenMarkdownPreview'
+" set to 1, nvim will open the preview window after entering the Markdown buffer
+" default: 0
+let g:mkdp_auto_start = 0
+
+" set to 1, the nvim will auto close current preview window when changing
+" from Markdown buffer to another buffer
+" default: 1
+let g:mkdp_auto_close = 1
+
 " General: key mappings {{{
 
-let mapleader = ','
+let g:mapleader = ','
+endfunction
 
 function! s:default_key_mappings()
-  " Coc: settings for coc.nvim
-  nmap     <silent>        <C-]> <Plug>(coc-definition)
-  nnoremap <silent>        <C-k> <Cmd>call CocActionAsync('doHover')<CR>
-  inoremap <silent>        <C-s> <Cmd>call CocActionAsync('showSignatureHelp')<CR>
-  nnoremap <silent>        <C-w>f <Cmd>call coc#float#jump()<CR>
-  nmap     <silent>        <leader>st <Plug>(coc-type-definition)
-  nmap     <silent>        <leader>si <Plug>(coc-implementation)
-  nmap     <silent>        <leader>su <Plug>(coc-references)
-  nmap     <silent>        <leader>sr <Plug>(coc-rename)
-  nmap     <silent>        <leader>sa v<Plug>(coc-codeaction-selected)
-  vmap     <silent>        <leader>sa <Plug>(coc-codeaction-selected)
-  nnoremap <silent>        <leader>sh <Cmd>call CocActionAsync('highlight')<CR>
-  nnoremap <silent>        <leader>sn <Cmd>CocNext<CR>
-  nnoremap <silent>        <leader>sp <Cmd>CocPrev<CR>
-  nnoremap <silent>        <leader>sl <Cmd>CocListResume<CR>
-  nnoremap <silent>        <leader>sc <Cmd>CocList commands<cr>
-  nnoremap <silent>        <leader>so <Cmd>CocList -A outline<cr>
-  nnoremap <silent>        <leader>sw <Cmd>CocList -A -I symbols<cr>
-  inoremap <silent> <expr> <c-space> coc#refresh()
-  nnoremap                 <leader>d <Cmd>call CocActionAsync('diagnosticToggle')<CR>
-  nnoremap                 <leader>D <Cmd>call CocActionAsync('diagnosticPreview')<CR>
-  nmap     <silent>        ]g <Plug>(coc-diagnostic-next)
-  nmap     <silent>        [g <Plug>(coc-diagnostic-prev)
-
-  " Toggle gitsigns
-  nnoremap <silent> <leader>g <Cmd>GitsignsToggle<CR>
 
   " J: unmap in normal mode unless range explicitly specified
   nnoremap <silent> <expr> J v:count == 0 ? '<esc>' : 'J'
@@ -276,35 +235,41 @@ function! s:default_key_mappings()
   nnoremap <C-f> :NERDTreeFind<CR>
 
   " TogglePluginWindows:
-  nnoremap <silent> <space>j <Cmd>NvimTreeFindFileToggle<CR>
-  nnoremap <silent> <space>l <Cmd>call <SID>coc_toggle_outline()<CR>
+  " nnoremap <silent> <space>j <Cmd>NvimTreeFindFileToggle<CR>
 
   " IndentLines: toggle if indent lines is visible
-  nnoremap <silent> <leader>i <Cmd>IndentLinesToggle<CR>
+  "nnoremap <silent> <leader>i <Cmd>IndentLinesToggle<CR>
 
   " Telescope: create shortcuts for finding stuff
-  nnoremap <silent> <C-p><C-p> <Cmd>Telescope find_files hidden=true<CR>
-  nnoremap <silent> <C-p><C-b> <Cmd>Telescope buffers<CR>
-  nnoremap <silent> <C-n><C-n> <Cmd>Telescope live_grep<CR>
-  nnoremap <silent> <C-n><C-w> <Cmd>Telescope grep_string<CR>
+  " <C-n>/<Down> Next item
+  " <C-p>/<Up>	 Previous item
+  " https://github.com/nvim-telescope/telescope.nvim#default-mappings
+  "nnoremap <silent> <C-p><C-p> <Cmd>Telescope find_files hidden=true<CR>
+  nnoremap <leader>ff <cmd>Telescope find_files<cr>
+  nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+  "nnoremap <silent> <C-p><C-b> <Cmd>Telescope buffers<CR>
+  "nnoremap <silent> <C-n><C-n> <Cmd>Telescope live_grep<CR>
+  "nnoremap <silent> <C-n><C-w> <Cmd>Telescope grep_string<CR>
 
-  " FiletypeFormat: remap leader f to do filetype formatting
-  nnoremap <silent> <leader>f <Cmd>silent! CocDisable<cr><Cmd>FiletypeFormat<cr><Cmd>silent! CocEnable<cr>
-  vnoremap <silent> <leader>f <Cmd>silent! CocDisable<cr>:FiletypeFormat<cr><Cmd>silent! CocEnable<cr>
+  "" FiletypeFormat: remap leader f to do filetype formatting
+  "nnoremap <silent> <leader>f <Cmd>silent! CocDisable<cr><Cmd>FiletypeFormat<cr><Cmd>silent! CocEnable<cr>
+  "vnoremap <silent> <leader>f <Cmd>silent! CocDisable<cr>:FiletypeFormat<cr><Cmd>silent! CocEnable<cr>
 
-  " Open GitHub ssh url
-  nnoremap gx <Cmd>call <SID>gx_improved()<CR>
+  "" Open GitHub ssh url
+  "nnoremap gx <Cmd>call <SID>gx_improved()<CR>
 
-  " Clipboard Copy: Visual mode copy is pretty simple
-  vnoremap <leader>y "+y
-  nnoremap <leader>y "+y
+  "" Clipboard Copy: Visual mode copy is pretty simple
+  "vnoremap <leader>y "+y
+  "nnoremap <leader>y "+y
 
-  " Mouse: toggle folds with middle click (I never use it for paste)
-  noremap <silent> <MiddleMouse>   <LeftMouse>za
-  noremap <silent> <2-MiddleMouse> <LeftMouse>za
-  noremap <silent> <3-MiddleMouse> <LeftMouse>za
-  noremap <silent> <4-MiddleMouse> <LeftMouse>za
-
+  "" Mouse: toggle folds with middle click (I never use it for paste)
+  "noremap <silent> <MiddleMouse>   <LeftMouse>za
+  "noremap <silent> <2-MiddleMouse> <LeftMouse>za
+  "noremap <silent> <3-MiddleMouse> <LeftMouse>za
+  "noremap <silent> <4-MiddleMouse> <LeftMouse>za
+  "
+  " remap vim-surround ysiw" to a"
+  nnoremap ga" :ysiw"<CR>
   " Auto-execute all filetypes
   let &filetype=&filetype
 endfunction
@@ -316,13 +281,6 @@ augroup custom_remap_man_help
   autocmd FileType man,help nnoremap <buffer> <silent> <C-]> <C-]>
 augroup end
 
-augroup custom_remap_nvim_tree_lua
-  autocmd!
-  autocmd FileType NvimTree nnoremap <buffer> <silent> <C-l> <Cmd>NvimTreeResize +2<CR>
-  autocmd FileType NvimTree nnoremap <buffer> <silent> <C-h> <Cmd>NvimTreeResize -2<CR>
-augroup end
-
-
 let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
@@ -330,146 +288,6 @@ let g:ctrlp_match_func = {'match': 'matcher#python', 'match_args': ['line','fnam
 
 nnoremap <leader>f :CtrlP<CR>
 
-" }}}
-" Package: language server protocol (LSP) with coc.nvim {{{
-
-let g:coc_snippet_next = '<C-j>'
-let g:coc_snippet_prev = '<C-k>'
-let g:coc_start_at_startup = 1
-let g:coc_filetype_map = {
-      \ 'markdown.mdx': 'markdown',
-      \ 'yaml.ansible': 'yaml',
-      \ 'yaml.docker-compose': 'yaml',
-      \ 'jinja.html': 'html',
-      \ }
-
-" Coc Global Extensions: automatically installed on Vim open
-let g:coc_global_extensions = [
-      \ '@yaegassy/coc-nginx',
-      \ 'coc-css',
-      \ 'coc-dictionary',
-      \ 'coc-docker',
-      \ 'coc-emoji',
-      \ 'coc-go',
-      \ 'coc-html',
-      \ 'coc-json',
-      \ 'coc-lists',
-      \ 'coc-ltex',
-      \ 'coc-markdownlint',
-      \ 'coc-prisma',
-      \ 'coc-pyright',
-      \ 'coc-rust-analyzer',
-      \ 'coc-sh',
-      \ 'coc-snippets',
-      \ 'coc-sumneko-lua',
-      \ 'coc-svg',
-      \ 'coc-syntax',
-      \ 'coc-texlab',
-      \ 'coc-toml',
-      \ 'coc-tsserver',
-      \ 'coc-vimlsp',
-      \ 'coc-word',
-      \ 'coc-yank',
-      \ ]
-
-" Note: coc-angular requires `npm install @angular/language-service` in
-" project directory to stop coc from crashing. See:
-" <https://github.com/iamcco/coc-angular/issues/47>
-
-function! s:autocmd_custom_coc()
-  if !exists("g:did_coc_loaded")
-    return
-  endif
-  augroup custom_coc
-    autocmd FileType coctree set nowrap
-    autocmd FileType nginx let b:coc_additional_keywords = ['$']
-    autocmd FileType scss let b:coc_additional_keywords = ['@']
-    autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
-    autocmd User CocNvimInit call s:default_key_mappings()
-  augroup end
-endfunction
-
-function! s:coc_toggle_outline() abort
-  let winid = coc#window#find('cocViewId', 'OUTLINE')
-  if winid == -1
-    call CocActionAsync('showOutline', 1)
-  else
-    call coc#window#close(winid)
-  endif
-endfunction
-
-augroup custom_coc
-  autocmd!
-  autocmd VimEnter * call s:autocmd_custom_coc()
-augroup end
-
-" }}}
-" Package: lua extensions for Neovim {{{
-
-function! s:safe_require(package)
-  try
-    execute "lua require('" . a:package . "')"
-  catch
-    echom "Error with lua require('" . a:package . "')"
-  endtry
-endfunction
-
-function! s:setup_lua_packages()
-  call s:safe_require('config.colorizer')
-  call s:safe_require('config.gitsigns')
-  call s:safe_require('config.nvim-autopairs')
-  call s:safe_require('config.nvim-tree')
-  call s:safe_require('config.nvim-treesitter')
-  call s:safe_require('config.nvim-ts-context-commentstring')
-  call s:safe_require('config.nvim-web-devicons')
-  call s:safe_require('config.spellsitter')
-  call s:safe_require('config.telescope')
-endfunction
-
-call s:setup_lua_packages()
-
-augroup custom_general_lua_extensions
-  autocmd!
-  autocmd FileType vim let &l:path .= ','.stdpath('config').'/lua'
-  autocmd FileType vim setlocal
-        \ includeexpr=substitute(v:fname,'\\.','/','g')
-        \ suffixesadd^=.lua
-augroup end
-
-command! GitsignsToggle Gitsigns toggle_signs
-
-" }}}
-" General: syntax & colorscheme {{{
-
-augroup custom_colorscheme
-  autocmd!
-  " typescriptParens are stupidly linked to 'Normal' in Neovim.
-  " This causes problems with hover windows in coc and is solved here
-  autocmd ColorScheme * highlight link typescriptParens cleared
-  autocmd ColorScheme * highlight link ExtraWhitespace DiffText
-  autocmd ColorScheme * highlight link HighlightedyankRegion Search
-  autocmd ColorScheme * highlight link CocHighlightText Underlined
-
-  autocmd ColorScheme * highlight CocErrorHighlight gui=undercurl
-  autocmd ColorScheme * highlight CocWarningHighlight gui=undercurl
-  autocmd ColorScheme * highlight CocInfoHighlight gui=undercurl
-  autocmd ColorScheme * highlight CocHintHighlight gui=undercurl
-
-  autocmd ColorScheme PaperColorSlim
-    \ if &background == 'light' |
-    \   execute 'highlight CocSearch guifg=#005f87' |
-    \   execute 'highlight CocMenuSel guibg=#bcbcbc' |
-    \ else |
-    \   execute 'highlight CocSearch guifg=#5fafd7' |
-    \   execute 'highlight CocMenuSel guibg=#585858' |
-    \ endif
-augroup end
-
-try
-  colorscheme PaperColorSlim
-catch
-  echo 'An error occurred while configuring Papercolor'
-endtry
 
 " }}}
 " General: filetype {{{
@@ -597,7 +415,6 @@ let $PATH = $PWD . '/node_modules/.bin:' . $PATH
 " commentstring: read by vim-commentary; must be one template
 " comments: csv of comments.
 " formatoptions: influences how Vim formats text
-"   ':help fo-table' will get the desired result
 augroup custom_comment_config
   autocmd!
   autocmd FileType dosini setlocal commentstring=#\ %s comments=:#,:;
@@ -720,24 +537,8 @@ command! Preview call s:preview()
 " Package: misc global var config {{{
 
 " Languages: configure location of host
-let g:python3_host_prog = "$HOME/.asdf/shims/python"
+"let g:python3_host_prog = "$HOME/.asdf/shims/python"
 
-" Configure clipboard explicitly. Speeds up startup
-let g:clipboard = {
-      \ 'name': 'xsel',
-      \ 'copy': {
-      \    '+': 'xsel --clipboard --input',
-      \    '*': 'xsel --clipboard --input',
-      \  },
-      \ 'paste': {
-      \    '+': 'xsel --clipboard --output',
-      \    '*': 'xsel --clipboard --output',
-      \ },
-      \ 'cache_enabled': 0,
-      \ }
-
-" Netrw: disable completely
-let g:loaded_netrw = 1
 let g:loaded_netrwPlugin = 1
 let g:netrw_nogx = 1
 
@@ -761,4 +562,9 @@ let g:vim_filetype_formatter_commands = {
       \ 'python': 'black -q - | isort -q - | docformatter -',
       \ }
 
-" }}}
+" Configs for Python syntax highlighter
+"colorscheme nightfox
+colorscheme tokyonight-storm
+lua << EOF
+require("nvim-autopairs").setup {}
+EOF
